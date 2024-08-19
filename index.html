@@ -137,15 +137,15 @@
     <script>
         // List of exercises
         const exercises = [
-            "Push-ups - 1 minute",
+            "Push-ups - 30 seconds",
             "Jumping Jacks - 1 minute",
-            "Plank - 1 minute",
-            "Squats - 1 minute",
-            "Burpees - 1 minute",
-            "Lunges - 1 minute",
-            "Mountain Climbers - 1 minute",
+            "Plank - 45 seconds",
+            "Squats - 20 reps",
+            "Burpees - 15 reps",
+            "Lunges - 20 reps",
+            "Mountain Climbers - 30 seconds",
             "High Knees - 1 minute",
-            "Sit-ups - 1 minute"
+            "Sit-ups - 20 reps"
         ];
 
         // Helper functions for cookies
@@ -209,16 +209,14 @@
         // Function to start the workout timer
         function startWorkoutTimer() {
             secondsRemaining = 60;
-            workoutDuration += 60;
-            document.getElementById('timer').innerText = `Time Remaining: ${secondsRemaining}s`;
+            document.getElementById('timer').innerText = `Exercise Time: ${secondsRemaining}s`;
 
             timerInterval = setInterval(() => {
                 secondsRemaining--;
-                document.getElementById('timer').innerText = `Time Remaining: ${secondsRemaining}s`;
+                document.getElementById('timer').innerText = `Exercise Time: ${secondsRemaining}s`;
                 if (secondsRemaining <= 0) {
                     clearInterval(timerInterval);
                     startRestTimer();
-                    playCoinAnimation();
                 }
             }, 1000);
         }
@@ -233,96 +231,51 @@
                 if (restTime <= 0) {
                     clearInterval(restInterval);
                     restTime = 30;
-                    startWorkoutTimer(); // Reset workout timer
                     displayNewWorkout(); // Generate new workout
+                    startWorkoutTimer(); // Reset workout timer
                 }
             }, 1000);
         }
 
-        // Function to track coins every 90 seconds
-        function trackCoins() {
-            coins += 10;
-            document.getElementById('coins').innerText = `Coins: ${coins}`;
-            setCookie('coins', coins, 7); // Save to cookies
+        // Function to start the workout process
+        function startWorkout() {
+            displayNewWorkout();
+            startWorkoutTimer();
         }
 
-        // Function to update progress bar every 30 seconds
-        function updateProgressBar() {
-            progress += 30; // Increment progress per 30 seconds
+        // Function to stop the workout
+        function stopWorkout() {
+            clearInterval(timerInterval);
+            clearInterval(restInterval);
+            document.getElementById('timer').innerText = 'Exercise Time: 0s';
+            document.getElementById('rest').innerText = 'Rest Time: 0s';
+        }
 
-            if (progress >= 270) { // Level up after 270 seconds of progress
-                progress = 0; // Reset progress
-                level++;
-                document.getElementById('level').innerText = `Level: ${level}`;
-                setCookie('level', level, 7); // Save level to cookies
-                setCookie('progress', progress, 7); // Save progress
-                document.getElementById('progress-bar').style.width = '0%';
-                celebrate.style.display = 'block';
-                setTimeout(() => celebrate.style.display = 'none', 2000);
+        // Event listeners for buttons
+        document.getElementById('generateBtn').addEventListener('click', startWorkout);
+        document.getElementById('stopBtn').addEventListener('click', stopWorkout);
+
+        // Dummy functions for store and reps logging
+        function buyPowerUp() {
+            if (coins >= 10) {
+                coins -= 10;
+                setCookie('coins', coins, 7);
+                document.getElementById('coins').innerText = `Coins: ${coins}`;
+                alert('Power-up bought!');
             } else {
-                const progressPercent = (progress / 270) * 100; // 270 seconds per level
-                document.getElementById('progress-bar').style.width = `${progressPercent}%`;
-                setCookie('progress', progress, 7); // Save progress to cookies
+                alert('Not enough coins!');
             }
         }
 
-        // Function to play coin animation and sound
-        function playCoinAnimation() {
-            coinSound.play();
-            coinAnimation.style.display = 'block';
-            setTimeout(() => {
-                coinAnimation.style.display = 'none';
-            }, 1000); // Hide animation after 1 second
-        }
-
-        // Function to log reps
         function logReps() {
             const repsInput = document.getElementById('repsInput').value;
-            const workout = document.getElementById('workoutDisplay').innerText;
-
-            if (repsInput && workout) {
-                repsLog[workout] = repsInput;
+            if (repsInput) {
+                repsLog[Date.now()] = repsInput;
+                setCookie('repsLog', JSON.stringify(repsLog), 7);
                 document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
-                setCookie('repsLog', JSON.stringify(repsLog), 7); // Save reps log to cookies
-            } else {
-                alert("Please complete the workout and enter the number of reps.");
+                document.getElementById('repsInput').value = '';
             }
         }
-
-        // Load persisted data on page load
-        document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
-
-        // Function to start the workout and related intervals
-        function startWorkout() {
-            displayNewWorkout(); // Display the first workout
-            clearInterval(workoutInterval); // Clear any existing intervals
-            workoutInterval = setInterval(trackCoins, 90000); // Track coins every 90 seconds
-            clearInterval(progressInterval); // Clear any existing progress intervals
-            progressInterval = setInterval(updateProgressBar, 30000); // Update progress every 30 seconds
-        }
-
-        // Function to stop the workout and save data
-        function stopWorkout() {
-            clearInterval(workoutInterval);
-            clearInterval(restInterval);
-            clearInterval(timerInterval);
-            clearInterval(progressInterval);
-            setCookie('coins', coins, 7); // Save coins
-            setCookie('level', level, 7); // Save level
-            setCookie('progress', progress, 7); // Save progress
-            setCookie('repsLog', JSON.stringify(repsLog), 7); // Save reps log
-        }
-
-        // Event listener for the Start Workout button
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            startWorkout(); // Start the workout cycle
-            generateDailyChallenge(); // Generate daily challenge
-        });
-
-        // Event listener for the Stop Workout button
-        document.getElementById('stopBtn').addEventListener('click', () => {
-            stopWorkout();
-        });
     </script>
 </body>
 </html>
