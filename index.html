@@ -32,6 +32,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            margin-top: 10px;
         }
 
         button:hover {
@@ -63,15 +64,30 @@
             width: 0;
             border-radius: 5px;
         }
+
+        /* Coin Animation */
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .coin {
+            width: 50px;
+            height: 50px;
+            margin: 10px auto;
+            background-image: url('https://www.clipartmax.com/png/full/121-1216650_gold-coin-png.png'); /* Example coin image */
+            background-size: cover;
+            animation: spin 1s infinite;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Random Workout Generator</h1>
         <button id="generateBtn">Start Workout</button>
-        <div id="workoutDisplay" class="workout-display">
-            <!-- Generated workout will appear here -->
-        </div>
+        <button id="stopBtn">Stop Workout</button>
+        <div id="workoutDisplay" class="workout-display"></div>
         <div id="timer" class="timer"></div>
         <div id="rest" class="rest"></div>
         <div id="coins" class="coins">Coins: 0</div>
@@ -79,40 +95,72 @@
         <div id="progress" class="progress">
             <div id="progress-bar" class="progress-bar"></div>
         </div>
+        <div class="coin" id="coinAnimation"></div>
         <div id="dailyChallenge" class="daily-challenge">Daily Challenge: None</div>
         <div id="achievements" class="achievements">Achievements: None</div>
         <div id="store" class="store">
             <h2>Store</h2>
             <button onclick="buyPowerUp()">Buy Power-Up (10 Coins)</button>
         </div>
+        <audio id="coinSound" src="https://freesound.org/data/previews/66/66717_931655-lq.mp3"></audio>
     </div>
 
     <script>
         // List of exercises
         const exercises = [
-            "Push-ups - 30 seconds",
+            "Push-ups - 1 minute",
             "Jumping Jacks - 1 minute",
-            "Plank - 45 seconds",
-            "Squats - 20 reps",
-            "Burpees - 15 reps",
-            "Lunges - 20 reps",
-            "Mountain Climbers - 30 seconds",
+            "Plank - 1 minute",
+            "Squats - 1 minute",
+            "Burpees - 1 minute",
+            "Lunges - 1 minute",
+            "Mountain Climbers - 1 minute",
             "High Knees - 1 minute",
-            "Sit-ups - 20 reps"
+            "Sit-ups - 1 minute"
         ];
 
+        // Helper functions for cookies
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
         // Global variables
-        let coins = 0;
-        let level = 1;
-        let progress = 0;
+        let coins = parseInt(getCookie('coins')) || 0;
+        let level = parseInt(getCookie('level')) || 1;
+        let progress = parseInt(getCookie('progress')) || 0;
         let achievements = [];
         let workoutInterval;
         let restInterval;
         let timerInterval;
+        let progressInterval;
         let secondsRemaining = 60;
         let restTime = 30;
         let workoutDuration = 0; // Tracks total workout duration for leveling
         let powerUpActive = false;
+
+        const coinSound = document.getElementById('coinSound');
+        const coinAnimation = document.getElementById('coinAnimation');
+
+        document.getElementById('coins').innerText = `Coins: ${coins}`;
+        document.getElementById('level').innerText = `Level: ${level}`;
+        document.getElementById('progress-bar').style.width = `${(progress / 180) * 100}%`;
 
         // Function to generate a single random workout
         function generateWorkout() {
@@ -162,63 +210,70 @@
             }, 1000);
         }
 
-        // Function to track coins earned every 5 minutes
+        // Function to track coins earned every 90 seconds
         function trackCoins() {
             workoutDuration += 1; // Increment workout duration by 1 second
 
-            if (workoutDuration % 300 === 0) { // Every 5 minutes = 300 seconds
-                coins++;
+            if (workoutDuration % 90 === 0) { // Every 90 seconds = 10 coins
+                coins += 10;
                 document.getElementById('coins').innerText = `Coins: ${coins}`;
-                updateProgressBar();
+                setCookie('coins', coins, 7); // Save to cookies
+                playCoinAnimation();
             }
 
-            // Level up after a certain amount of time (e.g., every 10 minutes)
-            if (workoutDuration >= level * 600) { // Every 10 minutes = 600 seconds per level
+            // Level up after a certain amount of time (e.g., every 180 seconds)
+            if (workoutDuration >= level * 180) { // Every 3 minutes = 180 seconds per level
                 level++;
                 document.getElementById('level').innerText = `Level: ${level}`;
+                setCookie('level', level, 7); // Save to cookies
+                progress = 0; // Reset progress after leveling up
                 document.getElementById('progress-bar').style.width = '0%';
+                setCookie('progress', progress, 7); // Save progress
             }
         }
 
-        // Function to update progress bar
+        // Function to update progress bar every 30 seconds
         function updateProgressBar() {
-            progress += 1; // Increment progress per coin earned
-            const progressPercent = (progress / (level * 10)) * 100; // Adjust based on your needs
+            progress += 30; // Increment progress per 30 seconds
+            const progressPercent = (progress / 180) * 100; // 180 seconds per level
             document.getElementById('progress-bar').style.width = `${progressPercent}%`;
 
-            if (progressPercent >= 100) {
-                progress = 0; // Reset progress when the bar is full
-                document.getElementById('progress-bar').style.width = '0%';
+            if (progress >= 180) {
+                progress = 0; // Reset progress after reaching 100%
             }
+            setCookie('progress', progress, 7); // Save progress to cookies
         }
 
-        // Function to check achievements
-        function checkAchievements() {
-            if (coins >= 50 && !achievements.includes('50 Coins')) {
-                achievements.push('50 Coins');
-                document.getElementById('achievements').innerText = `Achievements: ${achievements.join(', ')}`;
-            }
-            // Add more achievement checks here
+        // Function to play coin animation and sound
+        function playCoinAnimation() {
+            coinSound.play();
+            coinAnimation.style.display = 'block';
+            setTimeout(() => {
+                coinAnimation.style.display = 'none';
+            }, 1000); // Hide animation after 1 second
         }
 
         // Function to generate daily challenge
         function generateDailyChallenge() {
-            const dailyChallenges = [
-                "Complete 3 workouts",
-                "Earn 10 coins in a day",
-                "Complete a workout with 5 different exercises"
-            ];
-            let today = new Date().toDateString();
-            let challenge = dailyChallenges[Math.floor(Math.random() * dailyChallenges.length)];
+            let challenge = generateWorkout();
             document.getElementById('dailyChallenge').innerText = `Daily Challenge: ${challenge}`;
         }
 
-        // Function to handle in-game store purchases
+        // Function to track achievements
+        function trackAchievements() {
+            if (level >= 10) {
+                achievements.push("Reached Level 10!");
+                document.getElementById('achievements').innerText = `Achievements: ${achievements.join(', ')}`;
+            }
+        }
+
+        // Function to buy a power-up
         function buyPowerUp() {
             if (coins >= 10) {
                 coins -= 10;
                 document.getElementById('coins').innerText = `Coins: ${coins}`;
-                powerUpActive = true; // Activate power-up for next workout
+                setCookie('coins', coins, 7); // Save to cookies
+                powerUpActive = true;
                 alert("Power-Up Activated: Double workout time for the next session!");
             } else {
                 alert("Not enough coins!");
@@ -239,12 +294,35 @@
             // Track coins and workout duration
             clearInterval(workoutInterval); // Clear any existing intervals
             workoutInterval = setInterval(trackCoins, 1000); // Check every second
+
+            // Update the progress bar every 30 seconds
+            clearInterval(progressInterval); // Clear any existing progress intervals
+            progressInterval = setInterval(updateProgressBar, 30000); // Update progress every 30 seconds
         }
 
-        // Event listener for the button
+        // Function to stop the workout cycle
+        function stopWorkout() {
+            clearInterval(workoutInterval);
+            clearInterval(timerInterval);
+            clearInterval(restInterval);
+            clearInterval(progressInterval);
+            document.getElementById('workoutDisplay').innerText = "Workout Stopped";
+            document.getElementById('timer').innerText = "";
+            document.getElementById('rest').innerText = "";
+            setCookie('coins', coins, 7); // Save coins to cookies
+            setCookie('level', level, 7); // Save level to cookies
+            setCookie('progress', progress, 7); // Save progress to cookies
+        }
+
+        // Event listener for the Start Workout button
         document.getElementById('generateBtn').addEventListener('click', () => {
             startWorkout(); // Start the workout cycle
             generateDailyChallenge(); // Generate daily challenge
+        });
+
+        // Event listener for the Stop Workout button
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            stopWorkout();
         });
 
         // Initialize daily challenge on load
