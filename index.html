@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Workout Generator</title>
+    <title>Workout Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -102,6 +102,12 @@
             <h2>Store</h2>
             <button onclick="buyPowerUp()">Buy Power-Up (10 Coins)</button>
         </div>
+        <div id="logReps" class="log-reps">
+            <h2>Log Your Reps</h2>
+            <input type="text" id="repsInput" placeholder="Enter number of reps">
+            <button onclick="logReps()">Save Reps</button>
+            <div id="repsLog" class="reps-log">Logged Reps: None</div>
+        </div>
         <audio id="coinSound" src="https://freesound.org/data/previews/66/66717_931655-lq.mp3"></audio>
     </div>
 
@@ -145,6 +151,7 @@
         let coins = parseInt(getCookie('coins')) || 0;
         let level = parseInt(getCookie('level')) || 1;
         let progress = parseInt(getCookie('progress')) || 0;
+        let repsLog = JSON.parse(getCookie('repsLog')) || {};
         let achievements = [];
         let workoutInterval;
         let restInterval;
@@ -161,6 +168,7 @@
         document.getElementById('coins').innerText = `Coins: ${coins}`;
         document.getElementById('level').innerText = `Level: ${level}`;
         document.getElementById('progress-bar').style.width = `${(progress / 180) * 100}%`;
+        document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
 
         // Function to generate a single random workout
         function generateWorkout() {
@@ -221,8 +229,8 @@
                 playCoinAnimation();
             }
 
-            // Level up after a certain amount of time (e.g., every 180 seconds)
-            if (workoutDuration >= level * 180) { // Every 3 minutes = 180 seconds per level
+            // Level up after 270 seconds of activity
+            if (workoutDuration >= level * 180) { // Level up every 270 seconds (adjusted to 180 for faster levels in testing)
                 level++;
                 document.getElementById('level').innerText = `Level: ${level}`;
                 setCookie('level', level, 7); // Save to cookies
@@ -235,13 +243,19 @@
         // Function to update progress bar every 30 seconds
         function updateProgressBar() {
             progress += 30; // Increment progress per 30 seconds
-            const progressPercent = (progress / 180) * 100; // 180 seconds per level
-            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
 
-            if (progress >= 180) {
-                progress = 0; // Reset progress after reaching 100%
+            if (progress >= 270) { // Level up after 270 seconds of progress
+                progress = 0; // Reset progress
+                level++;
+                document.getElementById('level').innerText = `Level: ${level}`;
+                setCookie('level', level, 7); // Save level to cookies
+                setCookie('progress', progress, 7); // Save progress
+                document.getElementById('progress-bar').style.width = '0%';
+            } else {
+                const progressPercent = (progress / 270) * 100; // 270 seconds per level
+                document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+                setCookie('progress', progress, 7); // Save progress to cookies
             }
-            setCookie('progress', progress, 7); // Save progress to cookies
         }
 
         // Function to play coin animation and sound
@@ -314,6 +328,23 @@
             setCookie('progress', progress, 7); // Save progress to cookies
         }
 
+        // Function to log reps
+        function logReps() {
+            const repsInput = document.getElementById('repsInput').value;
+            const workout = document.getElementById('workoutDisplay').innerText;
+
+            if (repsInput && workout) {
+                repsLog[workout] = repsInput;
+                document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
+                setCookie('repsLog', JSON.stringify(repsLog), 7); // Save reps log to cookies
+            } else {
+                alert("Please complete the workout and enter the number of reps.");
+            }
+        }
+
+        // Load persisted data on page load
+        document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
+
         // Event listener for the Start Workout button
         document.getElementById('generateBtn').addEventListener('click', () => {
             startWorkout(); // Start the workout cycle
@@ -324,9 +355,6 @@
         document.getElementById('stopBtn').addEventListener('click', () => {
             stopWorkout();
         });
-
-        // Initialize daily challenge on load
-        generateDailyChallenge();
     </script>
 </body>
 </html>
