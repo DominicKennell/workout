@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workout Generator</title>
+    <title>Random Workout Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,11 +21,11 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 320px;
         }
 
         button {
-            background-color: #007bff;
+            background-color: #28a745; /* Bright Green */
             color: white;
             padding: 10px 20px;
             border: none;
@@ -33,36 +33,43 @@
             cursor: pointer;
             font-size: 16px;
             margin-top: 10px;
+            transition: background-color 0.3s, transform 0.2s;
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color: #218838; /* Darker Green */
+            transform: scale(1.05);
         }
 
         .workout-display, .daily-challenge, .store, .achievements {
             margin-top: 20px;
             font-size: 18px;
             line-height: 1.5;
+            color: #333;
         }
 
         .timer, .rest, .coins, .level, .progress {
             margin-top: 10px;
             font-size: 20px;
+            color: #007bff; /* Blue */
         }
 
         .progress {
             height: 20px;
             background-color: #ddd;
-            border-radius: 5px;
+            border-radius: 10px;
             width: 100%;
             margin-top: 10px;
+            position: relative;
+            overflow: hidden;
         }
 
         .progress-bar {
             height: 100%;
-            background-color: #007bff;
+            background-color: #28a745; /* Bright Green */
             width: 0;
-            border-radius: 5px;
+            border-radius: 10px;
+            transition: width 0.5s;
         }
 
         /* Coin Animation */
@@ -72,13 +79,28 @@
         }
 
         .coin {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             margin: 10px auto;
-            background-image: url('https://www.clipartmax.com/png/full/121-1216650_gold-coin-png.png'); /* Example coin image */
+            background-image: url('https://www.clipartmax.com/png/full/121-1216650_gold-coin-png.png');
             background-size: cover;
             animation: spin 1s infinite;
             display: none;
+        }
+
+        /* Achievement Animation */
+        @keyframes celebrate {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .celebrate {
+            display: none;
+            animation: celebrate 1s ease-out;
+            font-size: 24px;
+            color: #ffcc00; /* Gold */
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -108,21 +130,22 @@
             <button onclick="logReps()">Save Reps</button>
             <div id="repsLog" class="reps-log">Logged Reps: None</div>
         </div>
+        <div id="celebrate" class="celebrate">Congratulations!</div>
         <audio id="coinSound" src="https://freesound.org/data/previews/66/66717_931655-lq.mp3"></audio>
     </div>
 
     <script>
         // List of exercises
         const exercises = [
-            "Push-ups - 1 minute",
+            "Push-ups - 30 seconds",
             "Jumping Jacks - 1 minute",
-            "Plank - 1 minute",
-            "Squats - 1 minute",
-            "Burpees - 1 minute",
-            "Lunges - 1 minute",
-            "Mountain Climbers - 1 minute",
+            "Plank - 45 seconds",
+            "Squats - 20 reps",
+            "Burpees - 15 reps",
+            "Lunges - 20 reps",
+            "Mountain Climbers - 30 seconds",
             "High Knees - 1 minute",
-            "Sit-ups - 1 minute"
+            "Sit-ups - 20 reps"
         ];
 
         // Helper functions for cookies
@@ -164,80 +187,63 @@
 
         const coinSound = document.getElementById('coinSound');
         const coinAnimation = document.getElementById('coinAnimation');
+        const celebrate = document.getElementById('celebrate');
 
         document.getElementById('coins').innerText = `Coins: ${coins}`;
         document.getElementById('level').innerText = `Level: ${level}`;
-        document.getElementById('progress-bar').style.width = `${(progress / 180) * 100}%`;
+        document.getElementById('progress-bar').style.width = `${(progress / 270) * 100}%`;
         document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
 
-        // Function to generate a single random workout
+        // Function to generate a random workout
         function generateWorkout() {
-            let randomIndex = Math.floor(Math.random() * exercises.length);
+            const randomIndex = Math.floor(Math.random() * exercises.length);
             return exercises[randomIndex];
+        }
+
+        // Function to display a new workout
+        function displayNewWorkout() {
+            const workoutDisplay = document.getElementById('workoutDisplay');
+            workoutDisplay.innerHTML = generateWorkout();
         }
 
         // Function to start the workout timer
         function startWorkoutTimer() {
-            clearInterval(timerInterval); // Clear any existing timers
-
-            // Apply power-up effect (double workout time)
-            if (powerUpActive) {
-                secondsRemaining = 120; // Double the time
-                powerUpActive = false; // Power-up is used, deactivate it
-            } else {
-                secondsRemaining = 60; // Default workout time
-            }
-
+            secondsRemaining = 60;
+            workoutDuration += 60;
             document.getElementById('timer').innerText = `Time Remaining: ${secondsRemaining}s`;
 
             timerInterval = setInterval(() => {
                 secondsRemaining--;
                 document.getElementById('timer').innerText = `Time Remaining: ${secondsRemaining}s`;
-
                 if (secondsRemaining <= 0) {
                     clearInterval(timerInterval);
-                    startRestTimer(); // Start rest timer after workout ends
+                    startRestTimer();
+                    playCoinAnimation();
                 }
             }, 1000);
         }
 
         // Function to start the rest timer
         function startRestTimer() {
-            restTime = 30;
             document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
 
             restInterval = setInterval(() => {
                 restTime--;
                 document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
-
                 if (restTime <= 0) {
                     clearInterval(restInterval);
-                    document.getElementById('rest').innerText = ""; // Clear rest display
-                    startWorkout(); // Start a new workout cycle
+                    restTime = 30;
+                    startWorkoutTimer(); // Reset workout timer
+                    displayNewWorkout(); // Generate new workout
                 }
             }, 1000);
         }
 
-        // Function to track coins earned every 90 seconds
+        // Function to track coins every 90 seconds
         function trackCoins() {
-            workoutDuration += 1; // Increment workout duration by 1 second
-
-            if (workoutDuration % 90 === 0) { // Every 90 seconds = 10 coins
-                coins += 10;
-                document.getElementById('coins').innerText = `Coins: ${coins}`;
-                setCookie('coins', coins, 7); // Save to cookies
-                playCoinAnimation();
-            }
-
-            // Level up after 270 seconds of activity
-            if (workoutDuration >= level * 180) { // Level up every 270 seconds (adjusted to 180 for faster levels in testing)
-                level++;
-                document.getElementById('level').innerText = `Level: ${level}`;
-                setCookie('level', level, 7); // Save to cookies
-                progress = 0; // Reset progress after leveling up
-                document.getElementById('progress-bar').style.width = '0%';
-                setCookie('progress', progress, 7); // Save progress
-            }
+            coins += 10;
+            document.getElementById('coins').innerText = `Coins: ${coins}`;
+            setCookie('coins', coins, 7); // Save to cookies
         }
 
         // Function to update progress bar every 30 seconds
@@ -251,6 +257,8 @@
                 setCookie('level', level, 7); // Save level to cookies
                 setCookie('progress', progress, 7); // Save progress
                 document.getElementById('progress-bar').style.width = '0%';
+                celebrate.style.display = 'block';
+                setTimeout(() => celebrate.style.display = 'none', 2000);
             } else {
                 const progressPercent = (progress / 270) * 100; // 270 seconds per level
                 document.getElementById('progress-bar').style.width = `${progressPercent}%`;
@@ -265,67 +273,6 @@
             setTimeout(() => {
                 coinAnimation.style.display = 'none';
             }, 1000); // Hide animation after 1 second
-        }
-
-        // Function to generate daily challenge
-        function generateDailyChallenge() {
-            let challenge = generateWorkout();
-            document.getElementById('dailyChallenge').innerText = `Daily Challenge: ${challenge}`;
-        }
-
-        // Function to track achievements
-        function trackAchievements() {
-            if (level >= 10) {
-                achievements.push("Reached Level 10!");
-                document.getElementById('achievements').innerText = `Achievements: ${achievements.join(', ')}`;
-            }
-        }
-
-        // Function to buy a power-up
-        function buyPowerUp() {
-            if (coins >= 10) {
-                coins -= 10;
-                document.getElementById('coins').innerText = `Coins: ${coins}`;
-                setCookie('coins', coins, 7); // Save to cookies
-                powerUpActive = true;
-                alert("Power-Up Activated: Double workout time for the next session!");
-            } else {
-                alert("Not enough coins!");
-            }
-        }
-
-        // Function to start the workout cycle
-        function startWorkout() {
-            const workoutDisplay = document.getElementById('workoutDisplay');
-            let workout = generateWorkout();
-
-            // Display the workout
-            workoutDisplay.innerHTML = workout;
-
-            // Start the workout timer
-            startWorkoutTimer();
-
-            // Track coins and workout duration
-            clearInterval(workoutInterval); // Clear any existing intervals
-            workoutInterval = setInterval(trackCoins, 1000); // Check every second
-
-            // Update the progress bar every 30 seconds
-            clearInterval(progressInterval); // Clear any existing progress intervals
-            progressInterval = setInterval(updateProgressBar, 30000); // Update progress every 30 seconds
-        }
-
-        // Function to stop the workout cycle
-        function stopWorkout() {
-            clearInterval(workoutInterval);
-            clearInterval(timerInterval);
-            clearInterval(restInterval);
-            clearInterval(progressInterval);
-            document.getElementById('workoutDisplay').innerText = "Workout Stopped";
-            document.getElementById('timer').innerText = "";
-            document.getElementById('rest').innerText = "";
-            setCookie('coins', coins, 7); // Save coins to cookies
-            setCookie('level', level, 7); // Save level to cookies
-            setCookie('progress', progress, 7); // Save progress to cookies
         }
 
         // Function to log reps
@@ -344,6 +291,27 @@
 
         // Load persisted data on page load
         document.getElementById('repsLog').innerText = `Logged Reps: ${JSON.stringify(repsLog)}`;
+
+        // Function to start the workout and related intervals
+        function startWorkout() {
+            displayNewWorkout(); // Display the first workout
+            clearInterval(workoutInterval); // Clear any existing intervals
+            workoutInterval = setInterval(trackCoins, 90000); // Track coins every 90 seconds
+            clearInterval(progressInterval); // Clear any existing progress intervals
+            progressInterval = setInterval(updateProgressBar, 30000); // Update progress every 30 seconds
+        }
+
+        // Function to stop the workout and save data
+        function stopWorkout() {
+            clearInterval(workoutInterval);
+            clearInterval(restInterval);
+            clearInterval(timerInterval);
+            clearInterval(progressInterval);
+            setCookie('coins', coins, 7); // Save coins
+            setCookie('level', level, 7); // Save level
+            setCookie('progress', progress, 7); // Save progress
+            setCookie('repsLog', JSON.stringify(repsLog), 7); // Save reps log
+        }
 
         // Event listener for the Start Workout button
         document.getElementById('generateBtn').addEventListener('click', () => {
