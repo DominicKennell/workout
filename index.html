@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Workout Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .workout-display, .daily-challenge, .store, .achievements {
+            margin-top: 20px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        .timer, .rest, .coins, .level, .progress {
+            margin-top: 10px;
+            font-size: 20px;
+        }
+
+        .progress {
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 5px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            width: 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Random Workout Generator</h1>
+        <button id="generateBtn">Start Workout</button>
+        <div id="workoutDisplay" class="workout-display">
+            <!-- Generated workout will appear here -->
+        </div>
+        <div id="timer" class="timer"></div>
+        <div id="rest" class="rest"></div>
+        <div id="coins" class="coins">Coins: 0</div>
+        <div id="level" class="level">Level: 1</div>
+        <div id="progress" class="progress">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="dailyChallenge" class="daily-challenge">Daily Challenge: None</div>
+        <div id="achievements" class="achievements">Achievements: None</div>
+        <div id="store" class="store">
+            <h2>Store</h2>
+            <button onclick="buyPowerUp()">Buy Power-Up (10 Coins)</button>
+        </div>
+    </div>
+
+    <script>
+        // List of exercises
+        const exercises = [
+            "Push-ups - 30 seconds",
+            "Jumping Jacks - 1 minute",
+            "Plank - 45 seconds",
+            "Squats - 20 reps",
+            "Burpees - 15 reps",
+            "Lunges - 20 reps",
+            "Mountain Climbers - 30 seconds",
+            "High Knees - 1 minute",
+            "Sit-ups - 20 reps"
+        ];
+
+        // Global variables
+        let coins = 0;
+        let level = 1;
+        let progress = 0;
+        let achievements = [];
+        let workoutInterval;
+        let restInterval;
+        let timerInterval;
+        let secondsRemaining = 60;
+        let restTime = 30;
+        let workoutDuration = 0; // Tracks total workout duration for leveling
+        let powerUpActive = false;
+
+        // Function to generate a single random workout
+        function generateWorkout() {
+            let randomIndex = Math.floor(Math.random() * exercises.length);
+            return exercises[randomIndex];
+        }
+
+        // Function to start the workout timer
+        function startWorkoutTimer() {
+            clearInterval(timerInterval); // Clear any existing timers
+
+            // Apply power-up effect (double workout time)
+            if (powerUpActive) {
+                secondsRemaining = 120; // Double the time
+                powerUpActive = false; // Power-up is used, deactivate it
+            } else {
+                secondsRemaining = 60; // Default workout time
+            }
+
+            document.getElementById('timer').innerText = `Time Remaining: ${secondsRemaining}s`;
+
+            timerInterval = setInterval(() => {
+                secondsRemaining--;
+                document.getElementById('timer').innerText = `Time Remaining: ${secondsRemaining}s`;
+
+                if (secondsRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    startRestTimer(); // Start rest timer after workout ends
+                }
+            }, 1000);
+        }
+
+        // Function to start the rest timer
+        function startRestTimer() {
+            restTime = 30;
+            document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
+
+            restInterval = setInterval(() => {
+                restTime--;
+                document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
+
+                if (restTime <= 0) {
+                    clearInterval(restInterval);
+                    document.getElementById('rest').innerText = ""; // Clear rest display
+                    startWorkout(); // Start a new workout cycle
+                }
+            }, 1000);
+        }
+
+        // Function to track coins earned every 5 minutes
+        function trackCoins() {
+            workoutDuration += 1; // Increment workout duration by 1 second
+
+            if (workoutDuration % 300 === 0) { // Every 5 minutes = 300 seconds
+                coins++;
+                document.getElementById('coins').innerText = `Coins: ${coins}`;
+                updateProgressBar();
+            }
+
+            // Level up after a certain amount of time (e.g., every 10 minutes)
+            if (workoutDuration >= level * 600) { // Every 10 minutes = 600 seconds per level
+                level++;
+                document.getElementById('level').innerText = `Level: ${level}`;
+                document.getElementById('progress-bar').style.width = '0%';
+            }
+        }
+
+        // Function to update progress bar
+        function updateProgressBar() {
+            progress += 1; // Increment progress per coin earned
+            const progressPercent = (progress / (level * 10)) * 100; // Adjust based on your needs
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            if (progressPercent >= 100) {
+                progress = 0; // Reset progress when the bar is full
+                document.getElementById('progress-bar').style.width = '0%';
+            }
+        }
+
+        // Function to check achievements
+        function checkAchievements() {
+            if (coins >= 50 && !achievements.includes('50 Coins')) {
+                achievements.push('50 Coins');
+                document.getElementById('achievements').innerText = `Achievements: ${achievements.join(', ')}`;
+            }
+            // Add more achievement checks here
+        }
+
+        // Function to generate daily challenge
+        function generateDailyChallenge() {
+            const dailyChallenges = [
+                "Complete 3 workouts",
+                "Earn 10 coins in a day",
+                "Complete a workout with 5 different exercises"
+            ];
+            let today = new Date().toDateString();
+            let challenge = dailyChallenges[Math.floor(Math.random() * dailyChallenges.length)];
+            document.getElementById('dailyChallenge').innerText = `Daily Challenge: ${challenge}`;
+        }
+
+        // Function to handle in-game store purchases
+        function buyPowerUp() {
+            if (coins >= 10) {
+                coins -= 10;
+                document.getElementById('coins').innerText = `Coins: ${coins}`;
+                powerUpActive = true; // Activate power-up for next workout
+                alert("Power-Up Activated: Double workout time for the next session!");
+            } else {
+                alert("Not enough coins!");
+            }
+        }
+
+        // Function to start the workout cycle
+        function startWorkout() {
+            const workoutDisplay = document.getElementById('workoutDisplay');
+            let workout = generateWorkout();
+
+            // Display the workout
+            workoutDisplay.innerHTML = workout;
+
+            // Start the workout timer
+            startWorkoutTimer();
+
+            // Track coins and workout duration
+            clearInterval(workoutInterval); // Clear any existing intervals
+            workoutInterval = setInterval(trackCoins, 1000); // Check every second
+        }
+
+        // Event listener for the button
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            startWorkout(); // Start the workout cycle
+            generateDailyChallenge(); // Generate daily challenge
+        });
+
+        // Initialize daily challenge on load
+        generateDailyChallenge();
+    </script>
+</body>
+</html>
