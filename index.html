@@ -237,16 +237,43 @@
             }, 1000);
         }
 
+        // Function to increment progress and update progress bar
+        function incrementProgress() {
+            progress += 10; // Increase by 10 every interval
+            if (progress > 270) {
+                progress = 270; // Cap progress at 100%
+            }
+            setCookie('progress', progress, 7); // Update cookie with new progress value
+            updateProgressBar();
+        }
+
+        // Update progress bar width based on progress value
+        function updateProgressBar() {
+            document.getElementById('progress-bar').style.width = `${(progress / 270) * 100}%`;
+        }
+
+        // Function to start the progress update interval
+        function startProgressUpdate() {
+            progressInterval = setInterval(incrementProgress, 30000); // Update every 30 seconds
+        }
+
+        // Function to stop the progress update interval
+        function stopProgressUpdate() {
+            clearInterval(progressInterval);
+        }
+
         // Function to start the workout process
         function startWorkout() {
             displayNewWorkout();
             startWorkoutTimer();
+            startProgressUpdate(); // Start progress update when workout begins
         }
 
         // Function to stop the workout
         function stopWorkout() {
             clearInterval(timerInterval);
             clearInterval(restInterval);
+            stopProgressUpdate(); // Stop progress update when workout ends
             document.getElementById('timer').innerText = 'Exercise Time: 0s';
             document.getElementById('rest').innerText = 'Rest Time: 0s';
         }
@@ -276,58 +303,6 @@
                 document.getElementById('repsInput').value = '';
             }
         }
-
-        // Global variables for progress update
-let progress = parseInt(getCookie('progress')) || 0;
-const progressIncrement = 10; // Amount to increase progress every interval
-const progressIntervalTime = 30000; // 30 seconds in milliseconds
-
-// Update progress bar width based on progress value
-function updateProgressBar() {
-    document.getElementById('progress-bar').style.width = `${(progress / 270) * 100}%`;
-}
-
-// Increment progress and update progress bar
-function incrementProgress() {
-    progress += progressIncrement;
-    if (progress > 270) {
-        progress = 270; // Cap progress at 100%
-    }
-    setCookie('progress', progress, 7); // Update cookie with new progress value
-    updateProgressBar();
-}
-
-// Start progress update interval
-function startProgressUpdate() {
-    // Call incrementProgress every 30 seconds
-    progressInterval = setInterval(incrementProgress, progressIntervalTime);
-}
-
-// Stop progress update interval
-function stopProgressUpdate() {
-    clearInterval(progressInterval);
-}
-
-// Call startProgressUpdate when the workout starts
-function startWorkout() {
-    displayNewWorkout();
-    startWorkoutTimer();
-    startProgressUpdate(); // Start progress update when workout begins
-}
-
-// Call stopProgressUpdate when the workout stops
-function stopWorkout() {
-    clearInterval(timerInterval);
-    clearInterval(restInterval);
-    stopProgressUpdate(); // Stop progress update when workout ends
-    document.getElementById('timer').innerText = 'Exercise Time: 0s';
-    document.getElementById('rest').innerText = 'Rest Time: 0s';
-}
-
-// Event listeners for buttons
-document.getElementById('generateBtn').addEventListener('click', startWorkout);
-document.getElementById('stopBtn').addEventListener('click', stopWorkout);
-
     </script>
 </body>
 </html>
