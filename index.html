@@ -286,6 +286,83 @@
                 document.getElementById('repsInput').value = '';
             }
         }
+
+        function playCoinSound() {
+    const coinSound = document.getElementById('coinSound');
+    coinSound.play();
+}
+
+// Call this function in the `incrementCoins` function.
+function incrementCoins() {
+    coins += 10; 
+    setCookie('coins', coins, 7);
+    document.getElementById('coins').innerText = `Coins: ${coins}`;
+    playCoinSound(); // Play sound when coins are incremented
+}
+function showCoinAnimation() {
+    const coinAnimation = document.getElementById('coinAnimation');
+    coinAnimation.style.display = 'block';
+    setTimeout(() => {
+        coinAnimation.style.display = 'none';
+    }, 1000); // Show the animation for 1 second
+}
+
+// Call this function in the `incrementCoins` function.
+function incrementCoins() {
+    coins += 10; 
+    setCookie('coins', coins, 7);
+    document.getElementById('coins').innerText = `Coins: ${coins}`;
+    showCoinAnimation(); // Trigger animation when coins are incremented
+    playCoinSound(); // Play sound when coins are incremented
+}
+function levelUp() {
+    level++;
+    setCookie('level', level, 7);
+    document.getElementById('level').innerText = `Level: ${level}`;
+    celebrate.style.display = 'block';
+    setTimeout(() => {
+        celebrate.style.display = 'none';
+    }, 2000);
+
+    // Optionally, play a level-up sound or trigger another animation
+}
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function loadUserData() {
+    coins = parseInt(getCookie('coins')) || 0;
+    level = parseInt(getCookie('level')) || 1;
+    progress = parseInt(getCookie('progress')) || 0;
+    repsLog = JSON.parse(getCookie('repsLog')) || {};
+
+    document.getElementById('coins').innerText = `Coins: ${coins}`;
+    document.getElementById('level').innerText = `Level: ${level}`;
+    updateProgressBar();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserData(); // Load the user data on page load
+    document.getElementById('generateBtn').addEventListener('click', startWorkout);
+    document.getElementById('stopBtn').addEventListener('click', stopWorkout);
+});
+function startRestTimer() {
+    restTime = 30; // Reset rest time
+    document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
+
+    restInterval = setInterval(() => {
+        restTime--;
+        document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
+        if (restTime <= 0) {
+            clearInterval(restInterval);
+            displayNewWorkout();
+            startWorkoutTimer();
+        }
+    }, 1000);
+}
+
     </script>
 </head>
 <body>
