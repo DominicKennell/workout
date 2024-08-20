@@ -5,21 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Workout Generator</title>
     <style>
-   <style>
-            body {
-            font-family: 'Orbitron', monospace;
-            background-color: #212121;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            color: #ccc;
-            font-size: 18px;
-            }
+            height: 100vh;
+            margin: 0;
+        }
 
         .container {
             text-align: center;
-            background-color: #21212f;
+            background-color: #fff;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -27,22 +25,19 @@
         }
 
         button {
-            font-family: 'Orbitron', monospace;
-            background-color: yellow; /* Bright Green */
-            color: #333;
+            background-color: #28a745; /* Bright Green */
+            color: white;
             padding: 10px 20px;
             border: none;
-            border-radius: 2px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
             margin-top: 10px;
             transition: background-color 0.3s, transform 0.2s;
-            font-weight: bold;
-
         }
 
         button:hover {
-            background-color: yellow; /* Darker Green */
+            background-color: #218838; /* Darker Green */
             transform: scale(1.05);
         }
 
@@ -50,29 +45,30 @@
             margin-top: 20px;
             font-size: 18px;
             line-height: 1.5;
-            color: #ccc;
+            color: #333;
         }
 
         .timer, .rest, .coins, .level, .progress {
             margin-top: 10px;
             font-size: 20px;
-            color: #ccc;
+            color: #007bff; /* Blue */
         }
 
         .progress {
             height: 20px;
             background-color: #ddd;
+            border-radius: 10px;
             width: 100%;
             margin-top: 10px;
             position: relative;
             overflow: hidden;
-            transform: skew(25deg);
         }
 
         .progress-bar {
             height: 100%;
-            background-color: yellow; /* Bright Green */
+            background-color: #28a745; /* Bright Green */
             width: 0;
+            border-radius: 10px;
             transition: width 0.5s;
         }
 
@@ -119,7 +115,7 @@
             "Mountain Climbers - 1 minute",
             "High Knees - 1 minute",
             "Sit-ups - 1 minute",
-            "Chair Dips" - 1 minute",
+            "Chair Dips - 1 minute",
             "Bicycle Crunches - 1 minute",
             "Leg Raises - 1 minute",
             "Wall Sit - 1 minute",
