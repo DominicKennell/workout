@@ -362,6 +362,38 @@ function startRestTimer() {
         }
     }, 1000);
 }
+// List of audio files for rest narratives
+const restAudioFiles = [
+    'rest1.mp3',
+    'rest2.mp3',
+    'rest3.mp3',
+    'rest4.mp3',
+    'rest5.mp3',
+];
+
+// Function to play a random rest audio file
+function playRandomRestAudio() {
+    const randomIndex = Math.floor(Math.random() * restAudioFiles.length);
+    const audio = new Audio(restAudioFiles[randomIndex]);
+    audio.play();
+}
+
+// Update startRestTimer function to include audio playback
+function startRestTimer() {
+    restTime = 30; // Reset rest time
+    document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
+    playRandomRestAudio(); // Play a random rest audio file when rest starts
+
+    restInterval = setInterval(() => {
+        restTime--;
+        document.getElementById('rest').innerText = `Rest Time: ${restTime}s`;
+        if (restTime <= 0) {
+            clearInterval(restInterval);
+            displayNewWorkout();
+            startWorkoutTimer();
+        }
+    }, 1000);
+}
 
     </script>
 </head>
