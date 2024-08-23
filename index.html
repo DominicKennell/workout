@@ -108,6 +108,73 @@
             color: #ffcc00; /* Gold */
             margin-top: 20px;
         }
+        .container {
+    display: none; /* Hide the workout container initially */
+}
+
+.journey-map {
+    text-align: center;
+}
+
+.node {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    line-height: 40px;
+    cursor: pointer;
+    margin: 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.node.locked {
+    background-color: #ccc;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.node.active {
+    background-color: #007bff;
+}
+
+.node.completed {
+    background-color: #28a745; /* Green for completed levels */
+}
+
+.path {
+    display: inline-block;
+    width: 40px;
+    height: 5px;
+    background-color: #007bff;
+    margin: 0 10px;
+}
+
+.path.completed {
+    background-color: #28a745; /* Green for completed paths */
+}
+
+.container {
+    margin-top: 20px;
+}
+
+.store button {
+    background-color: #007bff; /* Blue color */
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.store button:hover {
+    background-color: #0056b3; /* Darker blue */
+}
+
     </style>
     <script>
         // List of exercises
@@ -406,10 +473,131 @@ function startRestTimer() {
     }, 1000);
 }
 
+function startLevel(levelClicked) {
+    if (levelClicked <= level) { // Check if the clicked level is unlocked
+        level = levelClicked; // Update the current level
+        setCookie('level', level, 7); // Save the level in cookies
+        document.getElementById('level').innerText = `Level: ${level}`;
+
+        // Show the workout generator container
+        document.querySelector('.container').style.display = 'block';
+
+        // Reset and start the workout for the selected level
+        resetWorkout();
+        startWorkout();
+    } else {
+        alert("This level is locked! Complete the previous levels to unlock it.");
+    }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserData(); // Load the user data on page load
+
+    // Hide the workout container initially
+    document.querySelector('.container').style.display = 'none';
+
+    document.getElementById('generateBtn').addEventListener('click', startWorkout);
+    document.getElementById('stopBtn').addEventListener('click', stopWorkout);
+});
+function startLevel(levelClicked) {
+    if (levelClicked <= level) { // Check if the clicked level is unlocked
+        level = levelClicked; // Update the current level
+        setCookie('level', level, 7); // Save the level in cookies
+        
+        // Hide the journey map and show the workout generator
+        document.getElementById('journeyMap').style.display = 'none';
+        document.getElementById('workoutGenerator').style.display = 'block';
+
+        // Reset and start the workout for the selected level
+        resetWorkout();
+        startWorkout();
+    } else {
+        alert("This level is locked! Complete the previous levels to unlock it.");
+    }
+}
+
+function levelUp() {
+    level++;
+    setCookie('level', level, 7);
+    document.getElementById('level').innerText = `Level: ${level}`;
+
+    // Unlock the next level on the journey map
+    if (level <= 5) {
+        const currentLevelNode = document.getElementById(`level${level - 1}`);
+        const nextLevelNode = document.getElementById(`level${level}`);
+        currentLevelNode.classList.add('completed');
+        if (nextLevelNode) {
+            nextLevelNode.classList.add('active');
+            nextLevelNode.classList.remove('locked'); // Make it clickable
+        }
+        // Update the path to the completed state
+        const pathToNextLevel = currentLevelNode.nextElementSibling;
+        if (pathToNextLevel && pathToNextLevel.classList.contains('path')) {
+            pathToNextLevel.classList.add('completed');
+        }
+    }
+
+    // Hide the workout generator and show the journey map
+    document.getElementById('journeyMap').style.display = 'block';
+    document.getElementById('workoutGenerator').style.display = 'none';
+}
+
+function resetWorkout() {
+    stopWorkout(); // Stop any ongoing workout
+    progress = 0; // Reset progress
+    updateProgressBar();
+    clearInterval(progressInterval);
+    clearInterval(coinInterval);
+    document.getElementById('timer').innerText = 'Exercise Time: 0s';
+    document.getElementById('rest').innerText = 'Rest Time: 0s';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserData(); // Load the user data on page load
+
+    // Hide the workout container initially
+    document.getElementById('workoutGenerator').style.display = 'none';
+
+    document.getElementById('generateBtn').addEventListener('click', startWorkout);
+    document.getElementById('stopBtn').addEventListener('click', stopWorkout);
+});
+let extraTime = 0; // Extra time added by the power-up
+const powerUpCost = 50; // Cost of the power-up
+function incrementCoins() {
+    coins += 10; // Example increment
+    setCookie('coins', coins, 7);
+    document.getElementById('coins').innerText = `Coins: ${coins}`;
+    showCoinAnimation(); // Trigger animation when coins are incremented
+    playCoinSound(); // Play sound when coins are incremented
+}
+function buyExtraTime() {
+    if (coins >= powerUpCost) {
+        coins -= powerUpCost; // Deduct coins
+        setCookie('coins', coins, 7);
+        document.getElementById('coins').innerText = `Coins: ${coins}`;
+        extraTime += 5 * 60; // Add 5 minutes (300 seconds) of extra time
+
+        alert('You have bought 5 minutes of extra workout time!');
+    } else {
+        alert('Not enough coins to buy extra time.');
+    }
+}
+
     </script>
 </head>
 <body>
-    <div class="container">
+    <div class="journey-map" id="journeyMap">
+        <div class="node active" id="level1" onclick="startLevel(1)">1</div>
+        <div class="path"></div>
+        <div class="node" id="level2" onclick="startLevel(2)">2</div>
+        <div class="path"></div>
+        <div class="node" id="level3" onclick="startLevel(3)">3</div>
+        <div class="path"></div>
+        <div class="node" id="level4" onclick="startLevel(4)">4</div>
+        <div class="path"></div>
+        <div class="node" id="level5" onclick="startLevel(5)">5</div>
+    </div>
+    
+    <div class="container" id="workoutGenerator">
         <h1>Workout Generator</h1>
         <button id="generateBtn">Start Workout</button>
         <button id="stopBtn">Stop Workout</button>
@@ -426,8 +614,8 @@ function startRestTimer() {
         <div id="achievements" class="achievements">Achievements: None</div>
         <div id="store" class="store">
             <h2>Store</h2>
-            <button onclick="buyPowerUp()">Buy Power-Up (10 Coins)</button>
-        </div>
+            <button id="buyPowerUpBtn">Buy Extra Time (50 Coins)</button>
+        </div>        
         <div id="logReps" class="log-reps">
             <h2>Log Your Reps</h2>
             <input type="text" id="repsInput" placeholder="Enter number of reps">
